@@ -1,3 +1,5 @@
+import { DateTimeFormatPipePipe } from './_helps/DateTimeFormatPipe.pipe';
+import { EventoService } from './_services/evento.service';
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
 import {HttpClientModule} from '@angular/common/http';
@@ -13,7 +15,8 @@ import { FormsModule } from '@angular/forms';
    declarations: [
       AppComponent,
       EventosComponent,
-      NavComponent
+      NavComponent,
+      DateTimeFormatPipePipe
    ],
    imports: [
       BrowserModule,
@@ -21,7 +24,9 @@ import { FormsModule } from '@angular/forms';
       HttpClientModule,
       FormsModule
    ],
-   providers: [],
+   providers: [
+     EventoService
+   ],
    bootstrap: [
       AppComponent
    ]

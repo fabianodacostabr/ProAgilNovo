@@ -1,5 +1,6 @@
+import { Evento } from './../_models/Evento';
+import { EventoService } from './../_services/evento.service';
 import { Component, OnInit } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-eventos',
@@ -17,12 +18,12 @@ export class EventosComponent implements OnInit {
     this.eventosFiltrados = this.filtrolista ? this.filtrarEvento(this.filtrolista) : this.eventos;
   }
 
-  eventosFiltrados: any = [];
-  eventos: any =[];
+  eventosFiltrados: Evento[];
+  eventos: Evento[];
   imglargura = 50;
   imgaltura = 2;
   imgmostrar = false;
-  
+
 
   /*eventos: any = [
     {
@@ -42,7 +43,7 @@ export class EventosComponent implements OnInit {
     }
   ];*/
 
-  constructor(private http: HttpClient) { }
+  constructor(private eventoService: EventoService) { }
 
   ngOnInit() {
     this.getEventos();
@@ -53,7 +54,7 @@ export class EventosComponent implements OnInit {
     this.imgmostrar = !this.imgmostrar;
   }
 
-  filtrarEvento(filtro:string) : any
+  filtrarEvento(filtro:string) : Evento[]
   {
     filtro = filtro.toLocaleLowerCase();
     return this.eventos.filter(
@@ -64,12 +65,13 @@ export class EventosComponent implements OnInit {
 
   getEventos()
   {
-    this.eventos = this.http.get('http://localhost:5000/api/values').subscribe(response => {
-      this.eventos = response;
+    this.eventoService.getAllEvento().subscribe((_eventos: Evento[]) => {
+      this.eventos = _eventos;
+      this.eventosFiltrados = this.eventos;
+      console.log(_eventos);
     }, error => {
       console.log(error);
-    }    
-    );
+    });
   }
 
 }
