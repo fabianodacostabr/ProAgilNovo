@@ -2,6 +2,7 @@ import { Evento } from './../_models/Evento';
 import { EventoService } from './../_services/evento.service';
 import { Component, OnInit, TemplateRef } from '@angular/core';
 import { BsModalRef, BsModalService } from 'ngx-bootstrap/modal';
+import { FormGroup, FormControl, Validators } from '@angular/forms';
 
 @Component({
   selector: 'app-eventos',
@@ -16,6 +17,7 @@ export class EventosComponent implements OnInit {
   imgaltura = 2;
   imgmostrar = false;
   modalRef: BsModalRef;
+  registerForm: FormGroup;
 
   _filtrolista: string;
   get filtrolista(): string{
@@ -57,7 +59,26 @@ export class EventosComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.validation();
     this.getEventos();
+  }
+
+  validation(){
+    this.registerForm = new FormGroup({
+      tema: new FormControl('',
+      [Validators.required,Validators.minLength(4),Validators.maxLength(50)]),
+      local: new FormControl('',Validators.required),
+      dataEvento: new FormControl('',Validators.required),
+      imagemURL: new FormControl('',Validators.required),
+      qtdPessoas: new FormControl('',[Validators.required,Validators.max(120000)]),
+      telefone: new FormControl('',Validators.required),
+      email: new FormControl('',[Validators.required,Validators.email])
+    });
+  }
+
+  salvarAlteracao()
+  {
+
   }
 
   alterarImagem()
