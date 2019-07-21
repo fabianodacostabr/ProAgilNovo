@@ -2,7 +2,9 @@ import { Evento } from './../_models/Evento';
 import { EventoService } from './../_services/evento.service';
 import { Component, OnInit, TemplateRef } from '@angular/core';
 import { BsModalRef, BsModalService } from 'ngx-bootstrap/modal';
-import { FormGroup, FormControl, Validators } from '@angular/forms';
+import { FormGroup, Validators, FormBuilder } from '@angular/forms';
+import { defineLocale, BsLocaleService, ptBrLocale } from 'ngx-bootstrap';
+defineLocale('pt-br', ptBrLocale);
 
 @Component({
   selector: 'app-eventos',
@@ -13,10 +15,13 @@ export class EventosComponent implements OnInit {
 
   eventosFiltrados: Evento[];
   eventos: Evento[];
+  evento: Evento;
+
+  modosalvar = 'post';
+
   imglargura = 50;
   imgaltura = 2;
   imgmostrar = false;
-  modalRef: BsModalRef;
   registerForm: FormGroup;
 
   _filtrolista: string;
@@ -50,12 +55,17 @@ export class EventosComponent implements OnInit {
 
   constructor(
     private eventoService: EventoService,
-    private modalService: BsModalService
-    ) { }
+    private modalService: BsModalService,
+    private fb: FormBuilder,
+    private localeservice: BsLocaleService
+    ) {
+      this.localeservice.use('pt-br');
+    }
 
-  openModal(template: TemplateRef<any>)
+  openModal(template: any)
   {
-    this.modalRef = this.modalService.show(template);
+    this.registerForm.reset();
+    template.show();
   }
 
   ngOnInit() {
@@ -64,21 +74,58 @@ export class EventosComponent implements OnInit {
   }
 
   validation(){
-    this.registerForm = new FormGroup({
-      tema: new FormControl('',
-      [Validators.required,Validators.minLength(4),Validators.maxLength(50)]),
-      local: new FormControl('',Validators.required),
-      dataEvento: new FormControl('',Validators.required),
-      imagemURL: new FormControl('',Validators.required),
-      qtdPessoas: new FormControl('',[Validators.required,Validators.max(120000)]),
-      telefone: new FormControl('',Validators.required),
-      email: new FormControl('',[Validators.required,Validators.email])
+    this.registerForm = this.fb.group({
+      tema: ['',[Validators.required,Validators.minLength(4),Validators.maxLength(50)]],
+      local: ['',Validators.required],
+      dataEvento: ['',Validators.required],
+      imagemURL: ['',Validators.required],
+      qtdPessoas: ['',[Validators.required,Validators.max(120000)]],
+      telefone: ['',Validators.required],
+      email: ['',[Validators.required,Validators.email]]
     });
   }
 
-  salvarAlteracao()
+  editarEvento(evento: Evento, template: any)
   {
+    this.modosalvar = 'put';
+    this.openModal(template);
+    this.evento = evento;
+    this.registerForm.patchValue(evento);
+  }
 
+  novoEvento(template: any){
+    this.modosalvar = 'post';
+    this.openModal(template);
+  }
+
+  salvarAlteracao(template: any)
+  {
+    if (this.registerForm.valid)
+    {
+      if (this.modosalvar === 'post')
+      {
+        this.evento = Object.assign({}, this.registerForm.value);
+        this.eventoService.postEvento(this.evento).subscribe(
+          (novoevento: Evento) => {
+            template.hide();
+            this.getEventos();
+          }, error => {
+            console.log(error);
+          }
+        );
+      } else {
+        this.evento = Object.assign({id : this.evento.id }, this.registerForm.value);
+        this.eventoService.putEvento(this.evento).subscribe(
+          () => {
+            template.hide();
+            this.getEventos();
+          }, error => {
+            console.log(error);
+          }
+        );
+      }
+
+    }
   }
 
   alterarImagem()
