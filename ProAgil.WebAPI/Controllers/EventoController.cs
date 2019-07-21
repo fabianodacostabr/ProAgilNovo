@@ -48,7 +48,7 @@ namespace ProAgil.WebAPI.Controllers
             }
         }
 
-        [HttpGet("getByTema{tema}")]
+        [HttpGet("getByTema/{tema}")]
         public async Task<IActionResult> Get(string tema)
         {
              try{
@@ -83,7 +83,7 @@ namespace ProAgil.WebAPI.Controllers
             return BadRequest();
         }
 
-        [ HttpPut]
+        [HttpPut]
         public async Task<IActionResult> Put(int EventoId, Evento model)
         {
             try{
@@ -107,7 +107,7 @@ namespace ProAgil.WebAPI.Controllers
             return BadRequest();
         }
 
-        [ HttpDelete]
+        [HttpDelete]
         public async Task<IActionResult> Delete(int EventoId)
         {
             try{

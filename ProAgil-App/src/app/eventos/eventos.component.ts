@@ -116,7 +116,7 @@ export class EventosComponent implements OnInit {
       } else {
         this.evento = Object.assign({id : this.evento.id }, this.registerForm.value);
         this.eventoService.putEvento(this.evento).subscribe(
-          () => {
+          (novoevento: Evento) => {
             template.hide();
             this.getEventos();
           }, error => {
