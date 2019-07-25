@@ -4,6 +4,8 @@ import { Component, OnInit, TemplateRef } from '@angular/core';
 import { BsModalRef, BsModalService } from 'ngx-bootstrap/modal';
 import { FormGroup, Validators, FormBuilder } from '@angular/forms';
 import { defineLocale, BsLocaleService, ptBrLocale } from 'ngx-bootstrap';
+import { ToastrService } from 'ngx-toastr';
+
 defineLocale('pt-br', ptBrLocale);
 
 @Component({
@@ -58,7 +60,8 @@ export class EventosComponent implements OnInit {
     private eventoService: EventoService,
     private modalService: BsModalService,
     private fb: FormBuilder,
-    private localeservice: BsLocaleService
+    private localeservice: BsLocaleService,
+    private toastr: ToastrService
     ) {
       this.localeservice.use('pt-br');
     }
@@ -110,8 +113,10 @@ export class EventosComponent implements OnInit {
           (novoevento: Evento) => {
             template.hide();
             this.getEventos();
+            this.toastr.success('Inserido com Sucesso!');
           }, error => {
-            console.log(error);
+            this.toastr.error(`Erro Ao Inserir: ${error}`);
+            //console.log(error);
           }
         );
       } else {
@@ -120,8 +125,10 @@ export class EventosComponent implements OnInit {
           (novoevento: Evento) => {
             template.hide();
             this.getEventos();
+            this.toastr.success('Alterado com Sucesso!');
           }, error => {
-            console.log(error);
+            this.toastr.error(`Erro Ao Alterar: ${error}`);
+            //console.log(error);
           }
         );
       }
@@ -148,9 +155,9 @@ export class EventosComponent implements OnInit {
     this.eventoService.getAllEvento().subscribe((_eventos: Evento[]) => {
       this.eventos = _eventos;
       this.eventosFiltrados = this.eventos;
-      console.log(_eventos);
     }, error => {
-      console.log(error);
+      this.toastr.error(`Erro Ao Carregar: ${error}`);
+      //console.log(error);
     });
   }
 
@@ -165,7 +172,9 @@ export class EventosComponent implements OnInit {
       () => {
           template.hide();
           this.getEventos();
+          this.toastr.success('Deletado com Sucesso!');
         }, error => {
+          this.toastr.error('Erro ao Deletar!');
           console.log(error);
         }
     );
