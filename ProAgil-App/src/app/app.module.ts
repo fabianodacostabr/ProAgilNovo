@@ -21,6 +21,7 @@ import { EventosComponent } from './eventos/eventos.component';
 import { PalestranteComponent } from './palestrante/palestrante.component';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { ContatosComponent } from './contatos/contatos.component';
+import { TituloComponent } from './_shared/titulo/titulo.component';
 
 
 @NgModule({
@@ -31,7 +32,8 @@ import { ContatosComponent } from './contatos/contatos.component';
       DateTimeFormatPipePipe,
       PalestranteComponent,
       DashboardComponent,
-      ContatosComponent
+      ContatosComponent,
+      TituloComponent
    ],
    imports: [
       BrowserModule,
