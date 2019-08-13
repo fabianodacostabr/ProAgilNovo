@@ -9,6 +9,8 @@ using ProAgil.Repository;
 using ProAgil.Domain;
 using AutoMapper;
 using ProAgil.WebAPI.Dtos;
+using System.IO;
+using System.Net.Http.Headers;
 
 namespace ProAgil.WebAPI.Controllers
 {
@@ -146,6 +148,36 @@ namespace ProAgil.WebAPI.Controllers
             }
 
             return BadRequest();
+        }
+
+        [HttpPost("upload")]
+        public async Task<IActionResult> upload()
+        {
+            try{
+                var file = Request.Form.Files[0];
+                var folderName = Path.Combine("Resources","Images");
+                var pathToSave = Path.Combine(Directory.GetCurrentDirectory(),folderName);
+                
+                if(file.Length > 0)
+                {
+                    var fileName = ContentDispositionHeaderValue.Parse(file.ContentDisposition).FileName;
+                    var fullPath = Path.Combine(pathToSave,fileName.Replace("\""," ").Trim());
+
+                    using(var stream = new FileStream(fullPath, FileMode.Create)){
+                        file.CopyTo(stream);
+                    }
+
+                }                
+
+
+                return Ok();
+            }
+            catch(Exception err)
+            {
+                return this.StatusCode(StatusCodes.Status500InternalServerError,$"Falha Upload: {err.ToString()}");
+            }
+
+            return BadRequest("Erro ao tentar Upload de arquivo");
         }
 
 

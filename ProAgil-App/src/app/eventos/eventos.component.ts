@@ -24,6 +24,8 @@ export class EventosComponent implements OnInit {
   modosalvar = 'post';
   bodyDeletarEvento = '';
 
+  file: File;
+
   imglargura = 50;
   imgaltura = 2;
   imgmostrar = false;
@@ -102,6 +104,14 @@ export class EventosComponent implements OnInit {
   novoEvento(template: any){
     this.modosalvar = 'post';
     this.openModal(template);
+  }
+
+  onFileChange(event){
+    const reader = new FileReader();
+    if(event.target.files && event.target.files.length){
+      this.file = event.target.files;
+    }
+
   }
 
   salvarAlteracao(template: any)
