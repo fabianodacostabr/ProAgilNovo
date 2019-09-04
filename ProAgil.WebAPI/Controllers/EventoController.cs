@@ -1,16 +1,15 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
+using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using ProAgil.Repository;
 using ProAgil.Domain;
-using AutoMapper;
+using ProAgil.Repository;
 using ProAgil.WebAPI.Dtos;
-using System.IO;
-using System.Net.Http.Headers;
 
 namespace ProAgil.WebAPI.Controllers
 {
@@ -19,167 +18,181 @@ namespace ProAgil.WebAPI.Controllers
     public class EventoController : ControllerBase
     {
         private readonly IProAgilRepository _repo;
-        public readonly IMapper _mapper;
+        private readonly IMapper _mapper;
 
-        public EventoController(IProAgilRepository repo, IMapper mapper){
-            _repo = repo;
+        public EventoController(IProAgilRepository repo, IMapper mapper)
+        {
             _mapper = mapper;
+            _repo = repo;
         }
 
-        
         [HttpGet]
         public async Task<IActionResult> Get()
         {
-            try{
-                var eventos = await _repo.GetAllEventosAsync(true);
+            try
+            {
+                var eventos = await _repo.GetAllEventoAsync(true);
+
                 var results = _mapper.Map<EventoDto[]>(eventos);
+
                 return Ok(results);
             }
-            catch(Exception err)
+            catch (System.Exception ex)
             {
-                return this.StatusCode(StatusCodes.Status500InternalServerError,$"Falha DB: {err.ToString()}");
+                return this.StatusCode(StatusCodes.Status500InternalServerError, $"Banco Dados Falhou {ex.Message}");
             }
         }
 
-        
-        [HttpGet("{Id}")]
-        public async Task<IActionResult> Get(int Id)
+        [HttpPost("upload")]
+        public async Task<IActionResult> Upload()
         {
-             try{
-                var evento = await _repo.GetAllEventoAsyncById(Id,true);
-
-                var resultado = _mapper.Map<EventoDto>(evento);
-
-                return Ok(resultado);
-             }
-             catch(Exception err)
+            try
             {
-                return this.StatusCode(StatusCodes.Status500InternalServerError,"Falha DB");
+                var file = Request.Form.Files[0];
+                var folderName = Path.Combine("Resources", "Images");
+                var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
+
+                if (file.Length > 0)
+                {
+                    var filename = ContentDispositionHeaderValue.Parse(file.ContentDisposition).FileName;
+                    var fullPath = Path.Combine(pathToSave, filename.Replace("\"", " ").Trim());
+
+                    using (var stream = new FileStream(fullPath, FileMode.Create))
+                    {
+                        file.CopyTo(stream);
+                    }
+                }
+
+                return Ok();
+            }
+            catch (System.Exception ex)
+            {
+                return this.StatusCode(StatusCodes.Status500InternalServerError, $"Banco Dados Falhou {ex.Message}");
+            }
+
+            return BadRequest("Erro ao tentar realizar upload");
+        }
+
+        [HttpGet("{EventoId}")]
+        public async Task<IActionResult> Get(int EventoId)
+        {
+            try
+            {
+                var evento = await _repo.GetEventoAsyncById(EventoId, true);
+
+                var results = _mapper.Map<EventoDto>(evento);
+
+                return Ok(results);
+            }
+            catch (System.Exception)
+            {
+                return this.StatusCode(StatusCodes.Status500InternalServerError, "Banco Dados Falhou");
             }
         }
 
         [HttpGet("getByTema/{tema}")]
         public async Task<IActionResult> Get(string tema)
         {
-             try{
-                var eventos = await _repo.GetAllEventosAsyncByTema(tema,true);
+            try
+            {
+                var eventos = await _repo.GetAllEventoAsyncByTema(tema, true);
+
                 var results = _mapper.Map<EventoDto[]>(eventos);
 
                 return Ok(results);
-             }
-             catch(System.Exception)
+            }
+            catch (System.Exception)
             {
-                return this.StatusCode(StatusCodes.Status500InternalServerError,"Falha DB");
+                return this.StatusCode(StatusCodes.Status500InternalServerError, "Banco Dados Falhou");
             }
         }
 
-
-
-        // POST 
         [HttpPost]
         public async Task<IActionResult> Post(EventoDto model)
         {
-             try{
-
+            try
+            {
                 var evento = _mapper.Map<Evento>(model);
 
                 _repo.Add(evento);
 
-                if(await _repo.SaveChangesAsync())
+                if (await _repo.SaveChangesAsync())
                 {
                     return Created($"/api/evento/{model.Id}", _mapper.Map<EventoDto>(evento));
-                }                
-             }
-             catch(System.Exception)
+                }
+            }
+            catch (System.Exception ex)
             {
-                return this.StatusCode(StatusCodes.Status500InternalServerError,"Falha DB");
+                return this.StatusCode(StatusCodes.Status500InternalServerError,
+                    $"Banco Dados Falhou {ex.Message}");
             }
 
             return BadRequest();
         }
 
-
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Put(int Id, EventoDto model)
+        [HttpPut("{EventoId}")]
+        public async Task<IActionResult> Put(int EventoId, EventoDto model)
         {
-            try{
+            try
+            {
+                var evento = await _repo.GetEventoAsyncById(EventoId, false);
+                if (evento == null) return NotFound();
 
-                var evento = await _repo.GetAllEventoAsyncById(Id, false);
-                if(evento == null){
-                    return NotFound();
-                }
+                var idLotes = new List<int>();
+                var idRedesSociais = new List<int>();
+
+                model.Lotes.ForEach(item => idLotes.Add(item.Id));
+                model.RedesSociais.ForEach(item => idRedesSociais.Add(item.Id));
+
+                var lotes = evento.Lotes.Where(
+                    lote => !idLotes.Contains(lote.Id)
+                ).ToArray();
+
+                var redesSociais = evento.RedesSociais.Where(
+                    rede => !idLotes.Contains(rede.Id)
+                ).ToArray();
+
+                if (lotes.Length > 0) _repo.DeleteRange(lotes);
+                if (redesSociais.Length > 0) _repo.DeleteRange(redesSociais);
 
                 _mapper.Map(model, evento);
 
-               _repo.Update(model);
+                _repo.Update(evento);
 
-                if(await _repo.SaveChangesAsync())
+                if (await _repo.SaveChangesAsync())
                 {
                     return Created($"/api/evento/{model.Id}", _mapper.Map<EventoDto>(evento));
-                }                
-             }
-             catch(System.Exception)
+                }
+            }
+            catch (System.Exception ex)
             {
-                return this.StatusCode(StatusCodes.Status500InternalServerError,"Falha DB");
+                return this.StatusCode(StatusCodes.Status500InternalServerError, "Banco Dados Falhou " + ex.Message);
             }
 
             return BadRequest();
         }
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int Id)
+        [HttpDelete("{EventoId}")]
+        public async Task<IActionResult> Delete(int EventoId)
         {
-            try{
-                var evento = await _repo.GetAllEventoAsyncById(Id, false);
-                if(evento == null){
-                    return NotFound();
-                }
+            try
+            {
+                var evento = await _repo.GetEventoAsyncById(EventoId, false);
+                if (evento == null) return NotFound();
 
-               _repo.Delete(evento);
+                _repo.Delete(evento);
 
-                if(await _repo.SaveChangesAsync())
+                if (await _repo.SaveChangesAsync())
                 {
                     return Ok();
-                }                
-             }
-             catch(System.Exception)
+                }
+            }
+            catch (System.Exception)
             {
-                return this.StatusCode(StatusCodes.Status500InternalServerError,"Falha DB");
+                return this.StatusCode(StatusCodes.Status500InternalServerError, "Banco Dados Falhou");
             }
 
             return BadRequest();
         }
-
-        [HttpPost("upload")]
-        public async Task<IActionResult> upload()
-        {
-            try{
-                var file = Request.Form.Files[0];
-                var folderName = Path.Combine("Resources","Images");
-                var pathToSave = Path.Combine(Directory.GetCurrentDirectory(),folderName);
-                
-                if(file.Length > 0)
-                {
-                    var fileName = ContentDispositionHeaderValue.Parse(file.ContentDisposition).FileName;
-                    var fullPath = Path.Combine(pathToSave,fileName.Replace("\""," ").Trim());
-
-                    using(var stream = new FileStream(fullPath, FileMode.Create)){
-                        file.CopyTo(stream);
-                    }
-
-                }                
-
-
-                return Ok();
-            }
-            catch(Exception err)
-            {
-                return this.StatusCode(StatusCodes.Status500InternalServerError,$"Falha Upload: {err.ToString()}");
-            }
-
-            return BadRequest("Erro ao tentar Upload de arquivo");
-        }
-
-
     }
 }

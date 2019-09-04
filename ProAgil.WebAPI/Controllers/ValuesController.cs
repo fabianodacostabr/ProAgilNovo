@@ -5,8 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using ProAgil.Repository;
-using ProAgil.Domain;
+using ProAgil.Respository;
 
 namespace ProAgil.WebAPI.Controllers
 {
@@ -14,9 +13,9 @@ namespace ProAgil.WebAPI.Controllers
     [ApiController]
     public class ValuesController : ControllerBase
     {
-        private readonly ProAgilContext _context;
-
-        public ValuesController(ProAgilContext context){
+        public readonly ProAgilContext _context;
+        public ValuesController(ProAgilContext context)
+        {
             _context = context;
         }
 
@@ -24,28 +23,32 @@ namespace ProAgil.WebAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> Get()
         {
-            try{
+            try
+            {
                 var results = await _context.Eventos.ToListAsync();
+                
                 return Ok(results);
             }
-            catch(Exception err)
+            catch (System.Exception)
             {
-                return this.StatusCode(StatusCodes.Status500InternalServerError,"Falha DB");
-            }
+                return this.StatusCode(StatusCodes.Status500InternalServerError, "Banco Dados Falhou");
+            }            
         }
 
         // GET api/values/5
         [HttpGet("{id}")]
         public async Task<IActionResult> Get(int id)
         {
-             try{
-                var resultado = await _context.Eventos.FirstOrDefaultAsync(e=>e.Id == id);
-                return Ok(resultado);
-             }
-             catch(Exception err)
+            try
             {
-                return this.StatusCode(StatusCodes.Status500InternalServerError,"Falha DB");
+                var results = await _context.Eventos.FirstOrDefaultAsync(x => x.Id == id);
+                
+                return Ok(results);
             }
+            catch (System.Exception)
+            {
+                return this.StatusCode(StatusCodes.Status500InternalServerError, "Banco Dados Falhou");
+            }  
         }
 
         // POST api/values
